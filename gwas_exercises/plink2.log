@@ -1,0 +1,24 @@
+PLINK v2.0.0-a.7 64-bit (19 Oct 2025)
+Options in effect:
+  --pfile 1kgp3_maf05
+  --pgen-info
+
+Hostname: Silpas-Laptop.local
+Working directory: /Users/silpasoninallacheruvu/Documents/GitHub/5BD002/gwas_exercises
+Start time: Wed Oct 22 10:35:27 2025
+
+Random number seed: 1761122127
+16384 MiB RAM detected; reserving 8192 MiB for main workspace.
+Using up to 8 compute threads.
+2490 samples (1262 females, 1227 males, 1 ambiguous; 2489 founders) loaded from
+1kgp3_maf05.psam.
+6864317 variants loaded from 1kgp3_maf05.pvar.
+--pgen-info on 1kgp3_maf05.pgen:
+  Variants: 6864317
+  Samples: 2490
+  REF alleles are all known
+  Maximum allele count for a single variant: 2
+  Explicitly phased hardcalls present
+  No dosages present
+
+End time: Wed Oct 22 10:35:27 2025

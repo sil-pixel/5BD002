@@ -1,0 +1,26 @@
+PLINK v2.0.0-a.7 64-bit (19 Oct 2025)
+Options in effect:
+  --chr 22
+  --from-bp 49500000
+  --out chr22_49500_49750
+  --pfile 1kgp3_maf05
+  --r2-unphased square
+  --to-bp 49750000
+
+Hostname: Silpas-Laptop.local
+Working directory: /Users/silpasoninallacheruvu/Documents/GitHub/5BD002/gwas_exercises
+Start time: Wed Oct 22 11:02:37 2025
+
+Random number seed: 1761123757
+16384 MiB RAM detected; reserving 8192 MiB for main workspace.
+Using up to 8 compute threads.
+2490 samples (1262 females, 1227 males, 1 ambiguous; 2489 founders) loaded from
+1kgp3_maf05.psam.
+97213 out of 6864317 variants loaded from 1kgp3_maf05.pvar.
+2 categorical phenotypes loaded.
+Calculating allele frequencies... done.
+1569 variants remaining after main filters.
+--r2-unphased: Variant IDs written to chr22_49500_49750.unphased.vcor2.vars .
+--r2-unphased: Matrix written to chr22_49500_49750.unphased.vcor2 .
+
+End time: Wed Oct 22 11:02:37 2025

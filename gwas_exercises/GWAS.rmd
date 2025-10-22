@@ -1,0 +1,169 @@
+---
+title: "gwas"
+author: "Silpa"
+date: "2025-10-22"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(data.table)
+library(readr)
+library(ggplot2)
+library(reshape2)
+library(patchwork)
+```
+
+## R Markdown
+
+# Explore data file format(s) and describe the dataset
+
+```{r cars}
+# Read .pvar: skip the VCF-style preamble and start at the header line
+pvar <- fread("~/Documents/GitHub/5BD002/gwas_exercises/1kgp3_maf05.pvar", skip = "#CHROM")  # columns: #CHROM, POS, ID, REF, ALT
+setnames(pvar, 1, "CHROM")                          # rename #CHROM -> CHROM for convenience
+
+# Read .psam: first line is the header
+psam <- fread("~/Documents/GitHub/5BD002/gwas_exercises/1kgp3_maf05.psam", header=TRUE)
+
+# N samples
+n_samples <- nrow(psam)
+
+# N markers
+n_markers <- nrow(pvar)
+
+# Markers per chromosome (as a data.table)
+markers_per_chr <- pvar[ , .N, by = CHROM][order(as.numeric(gsub("[^0-9XYMT]", "", CHROM)))]
+list(n_samples = n_samples, n_markers = n_markers)
+markers_per_chr
+```
+
+# Computing allele frequencies
+
+Run Bash: ./plink2 --pfile 1kgp3_maf05 --freq --out freq_results
+
+```{r, echo=FALSE}
+afreq <- fread("~/Documents/GitHub/5BD002/gwas_exercises/freq_results.afreq")
+# Summary
+summary(afreq$ALT_FREQS)
+
+# histogram of allele frequency distribution
+
+
+freq <- read_tsv("~/Documents/GitHub/5BD002/gwas_exercises/freq_results.afreq", comment = "##", show_col_types = FALSE)
+
+ggplot(freq, aes(x = ALT_FREQS)) +
+  geom_histogram(binwidth = 0.05, fill = "steelblue", color = "white") +
+  labs(title = "Allele Frequency Distribution",
+       x = "ALT Allele Frequency",
+       y = "Count of Variants") +
+  theme_minimal()
+```
+
+#  heatmap of correlation 
+
+run bash : ./plink2 --pfile 1kgp3_maf05 --chr 22 --from-bp 49500000 --to-bp   49750000 --r2-unphased square --out chr22_49500_49750
+
+```{r}
+ids <- fread("~/Documents/GitHub/5BD002/gwas_exercises/chr22_49500_49750.unphased.vcor2.vars", header = FALSE)[[1]]
+m <- as.matrix(fread("~/Documents/GitHub/5BD002/gwas_exercises/chr22_49500_49750.unphased.vcor2", header = FALSE))
+stopifnot(nrow(m) == length(ids), ncol(m) == length(ids))
+rownames(m) <- colnames(m) <- ids
+
+df <- melt(m, varnames = c("i","j"), value.name = "r")
+ggplot(df, aes(i, j, fill = r)) +
+  geom_raster() +
+  scale_fill_viridis_c(limits = c(-1,1)) +  # r in [-1,1]
+  coord_fixed() +
+  labs(title = "Correlation heatmap", x = NULL, y = NULL, fill = "r") +
+  theme_minimal() +
+  theme(axis.text = element_blank(),
+        panel.grid = element_blank())
+
+```
+
+
+For europe ancestry samples heatmap :
+run :  ./plink2 --pfile 1kgp3_maf05 --chr 22 --from-bp 49500000 --to-bp 49750000  --keep-if "SuperPop == EUR"  --maf 0.01  --r2-unphased square --out chr22_49500_49750_EUR
+For african ancestry samples heatmap :
+Run : ./plink2 --pfile 1kgp3_maf05 --chr 22 --from-bp 49500000 --to-bp 49750000  --keep-if "SuperPop == AFR"  --maf 0.01  --r2-unphased square --out chr22_49500_49750_AFR
+
+```{r}
+# --- Load variant IDs and r (correlation) matrices ---
+ids_E <- fread("~/Documents/GitHub/5BD002/gwas_exercises/chr22_49500_49750_EUR.unphased.vcor2.vars", header = FALSE)[[1]]
+ids_A <- fread("~/Documents/GitHub/5BD002/gwas_exercises/chr22_49500_49750_AFR.unphased.vcor2.vars", header = FALSE)[[1]]
+mE    <- as.matrix(fread("~/Documents/GitHub/5BD002/gwas_exercises/chr22_49500_49750_EUR.unphased.vcor2", header = FALSE))
+mA    <- as.matrix(fread("~/Documents/GitHub/5BD002/gwas_exercises/chr22_49500_49750_AFR.unphased.vcor2", header = FALSE))
+rownames(mE) <- colnames(mE) <- ids_E
+rownames(mA) <- colnames(mA) <- ids_A
+
+# --- Align to common SNPs and order by genomic position ---
+common <- intersect(ids_E, ids_A)
+pord <- pvar[ID %in% common][order(CHROM, POS)]$ID
+mE2 <- mE[pord, pord, drop=FALSE]
+mA2 <- mA[pord, pord, drop=FALSE]
+
+# --- Use r^2 (square the correlations) ---
+r2E <- mE2^2
+r2A <- mA2^2
+
+# --- Melt to long format for ggplot ---
+dfE <- melt(r2E, varnames = c("i","j"), value.name = "r2")
+dfA <- melt(r2A, varnames = c("i","j"), value.name = "r2")
+
+pE <- ggplot(dfE, aes(i, j, fill = r2)) +
+  geom_raster() +
+  scale_fill_viridis_c(limits = c(0,1)) +
+  coord_fixed() +
+  labs(title = "LD r² — EUR (chr22:49.5–49.75Mb)", x = NULL, y = NULL) +
+  theme_minimal(base_size = 10) + theme(axis.text = element_blank(), panel.grid = element_blank())
+
+pA <- ggplot(dfA, aes(i, j, fill = r2)) +
+  geom_raster() +
+  scale_fill_viridis_c(limits = c(0,1)) +
+  coord_fixed() +
+  labs(title = "LD r² — AFR (same SNP set/order)", x = NULL, y = NULL) +
+  theme_minimal(base_size = 10) + theme(axis.text = element_blank(), panel.grid = element_blank())
+
+pE + pA
+
+```
+
+
+# LD Pruning
+
+run : ./plink2 --pfile 1kgp3_maf05 --indep-pairwise 500 50 0.1  --out pruned_snps
+
+Looking at a subset of genome-wide independent markers where the markers should have no pairwise R² \(>\) 0.1 in a window of 500kb
+
+
+# PCA 
+run : ./plink2 --pfile 1kgp3_maf05 --extract pruned_snps.prune.in --pca 20 approx --out pca_results
+
+```{r}
+# --- Load data ---
+pca  <- fread("~/Documents/GitHub/5BD002/gwas_exercises/pca_results.eigenvec", header = FALSE)
+
+# --- Name PCA columns ---
+# PLINK's .eigenvec format: IID PC1 PC2 PC3 ...
+setnames(pca, c("IID", paste0("PC", 1:(ncol(pca) - 1))))
+
+# Convert PC columns to numeric explicitly
+pc_cols <- grep("^PC", names(pca), value = TRUE)
+pca[, (pc_cols) := lapply(.SD, as.numeric), .SDcols = pc_cols]
+
+# --- Merge PCA + population info ---
+merged <- merge(pca, psam, by.x = "IID", by.y = "#IID")
+
+# --- Scatterplot ---
+ggplot(merged, aes(x = PC1, y = PC2, color = SuperPop)) +
+  geom_point(size = 2, alpha = 0.8) +
+  labs(title = "PCA of 1000 Genomes (chr22 subset)",
+       x = "Principal Component 1",
+       y = "Principal Component 2",
+       color = "SuperPop") +
+  theme_minimal(base_size = 13) +
+  theme(legend.position = "right",
+        panel.grid = element_blank())
+
+```

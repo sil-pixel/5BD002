@@ -1,0 +1,14 @@
+PLINK v2.0.0-a.7 64-bit (19 Oct 2025)
+Options in effect:
+  --operation_to_perform
+  --out output_file_prefix
+  --pfile input_data_prefix
+
+Hostname: Silpas-Laptop.local
+Working directory: /Users/silpasoninallacheruvu/Documents/GitHub/5BD002/gwas_exercises
+Start time: Wed Oct 22 09:45:22 2025
+
+Error: Unrecognized flag ('--operation_to_perform').
+For more info, try "plink2 --help <flag name>" or "plink2 --help | more".
+
+End time: Wed Oct 22 09:45:22 2025
