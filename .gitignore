@@ -4,3 +4,5 @@ gwas_exercises/1kgp3_maf05.pvar
 gwas_exercises/all_phase3_ns.pgen.zst
 gwas_exercises/freq_results.afreq
 gwas_exercises/pruned_snps.prune.out
+gwas_exercises/GWAS_2/ICAM2_P13598_OID20248_v1_Cardiometabolic
+gwas_exercises/GWAS_2/ICAM2/ICAM2_sample.bed
