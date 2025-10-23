@@ -17,21 +17,21 @@ The Missingness in Cannabis Use does not depend on the outcome or the covariates
 
 By definition, Missing at Random (MAR) is when the missingness in Cannabis Use can be explained by associations with the observed data, specifically fully observed data of covariates or outcome or both. Which is what we observe in Figure 1B, 1F and 1D respectively. In terms of d-separation, in the Figure 1B, there are multiple open paths from $Miss_{cu}$ to $Outcome$ : 
 
-1. $Miss_{cu}$ <- $Maternal Substance Use$ -> $Outcome$
-2. $Miss_{cu}$ <- $Maternal Substance Use$ -> $Cannabis Use$ -> $Outcome$
-3. $Miss_{cu}$ <- $Maternal Substance Use$ -> $Cannabis Use$ <- $Sex$ -> $Outcome$
+1. $$Miss_{cu} \leftarrow Maternal\ Substance\ Use \rightarrow Outcome$$
+2. $$Miss_{cu} \leftarrow Maternal\ Substance\ Use \rightarrow Cannabis\ Use \rightarrow Outcome$$
+3. $$Miss_{cu} \leftarrow Maternal\ Substance\ Use \rightarrow Cannabis\ Use \leftarrow Sex \rightarrow Outcome$$
 
-and can all be blocked when $Maternal Substance Use$ is adjusted for, where it is possible as $Maternal Substance Use$ is fully observed. Then, $Miss_{cu}$ and $Outcome$ are independent conditioned on $Maternal Substance Use$. Hence, as missingness can be explained with observed data, this is MAR.
+and can all be blocked when $Maternal\ Substance\ Use$ is adjusted for, where it is possible as $Maternal\ Substance\ Use$ is fully observed. Then, $Miss_{cu}$ and $Outcome$ are independent conditioned on $Maternal\ Substance\ Use$. Hence, as missingness can be explained with observed data, this is MAR.
 
 Secondly in the Figure 1D, there is an additional open path compared to Figure 1B: 
 
-$Miss_{cu}$ <- $Outcome$
+$$Miss_{cu} \leftarrow Outcome$$
 
-which means that $Outcome$ is causing the missingness in Cannabis Use and not the other way around. This path can be blocked by conditioning on $Outcome$, which is fully observed as well. Hence, the Missingness in Cannabis Use and $Outcome$ are d-separated conditioned on $Maternal Substance Use$ and $Outcome$. Therefore, missingness is MAR. 
+which means that $Outcome$ is causing the missingness in Cannabis Use and not the other way around. This path can be blocked by conditioning on $Outcome$, which is fully observed as well. Hence, the Missingness in Cannabis Use and $Outcome$ are d-separated conditioned on $Maternal\ Substance\ Use$ and $Outcome$. Therefore, missingness is MAR. 
 
 Lastly, in the Figure 1F, the only open path existing is:
 
-$Miss_{cu}$ <- $Outcome$
+$$Miss_{cu} \leftarrow Outcome$$
 
 Hence, the Missingness in Cannabis Use and $Outcome$ are d-separated conditioned on $Outcome$ and is MAR. 
 
@@ -41,15 +41,15 @@ Hence, the Missingness in Cannabis Use and $Outcome$ are d-separated conditioned
 By definition, Missingness Not At Random (MNAR) is when missingness cannot be explained by the observed data. For example, when Missingness in Cannabis Use is explained by the Cannabis Use itself, we can say that the missingness is not at random. 
 In terms of d-separation, firstly in Figure 1C, there are multiple open paths from $Miss_{cu}$ to $Outcome$ :
 
-1. $Miss_{cu}$ <- $Cannabis Use$ -> $Outcome$
-2. $Miss_{cu}$ <- $Cannabis Use$ <- $Sex$ -> $Outcome$
-3. $Miss_{cu}$ <- $Maternal Substance Use$ -> $Outcome$
-4. $Miss_{cu}$ <- $Maternal Substance Use$ -> $Cannabis Use$ -> $Outcome$
-5. $Miss_{cu}$ <- $Maternal Substance Use$ -> $Cannabis Use$ <- $Sex$ -> $Outcome$
+1. $$Miss_{cu} \leftarrow Cannabis\ Use \rightarrow Outcome$$
+2. $$Miss_{cu} \leftarrow Cannabis\ Use \leftarrow Sex \rightarrow Outcome$$
+3. $$Miss_{cu} \leftarrow Maternal\ Substance\ Use \rightarrow Outcome$$
+4. $$Miss_{cu} \leftarrow Maternal\ Substance\ Use \rightarrow Cannabis\ Use \rightarrow Outcome$$
+5. $$Miss_{cu} \leftarrow Maternal\ Substance\ Use \rightarrow Cannabis\ Use \leftarrow Sex \rightarrow Outcome$$
 
 Here, the first two paths can only be blocked by conditioning on $Cannabis Use$, which is not fully observed. Hence, $Miss_{cu}$ and $Outcome$ cannot be d-separated and are not independent of each other. Therefore, is MNAR.
 
-Similarly in Figure 1E, the open path of $Miss_{cu}$ <- $Outcome$ is added to the previous list of Figure 1C, which can be blocked by adjusting for $Outcome$. Still, the $Miss_{cu}$ and $Outcome$ cannot be d-separated, even after adjusting for all observed variables and is MNAR. 
+Similarly in Figure 1E, the open path of $$Miss_{cu} \leftarrow Outcome$$ is added to the previous list of Figure 1C, which can be blocked by adjusting for $Outcome$. Still, the $Miss_{cu}$ and $Outcome$ cannot be d-separated, even after adjusting for all observed variables and is MNAR. 
 
 
 ## Question 4 

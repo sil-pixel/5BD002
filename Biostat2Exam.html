@@ -371,26 +371,33 @@ specifically fully observed data of covariates or outcome or both. Which
 is what we observe in Figure 1B, 1F and 1D respectively. In terms of
 d-separation, in the Figure 1B, there are multiple open paths from <span class="math inline">\(Miss_{cu}\)</span> to <span class="math inline">\(Outcome\)</span> :</p>
 <ol style="list-style-type: decimal">
-<li><span class="math inline">\(Miss_{cu}\)</span> &lt;- <span class="math inline">\(Maternal Substance Use\)</span> -&gt; <span class="math inline">\(Outcome\)</span></li>
-<li><span class="math inline">\(Miss_{cu}\)</span> &lt;- <span class="math inline">\(Maternal Substance Use\)</span> -&gt; <span class="math inline">\(Cannabis Use\)</span> -&gt; <span class="math inline">\(Outcome\)</span></li>
-<li><span class="math inline">\(Miss_{cu}\)</span> &lt;- <span class="math inline">\(Maternal Substance Use\)</span> -&gt; <span class="math inline">\(Cannabis Use\)</span> &lt;- <span class="math inline">\(Sex\)</span> -&gt; <span class="math inline">\(Outcome\)</span></li>
+<li><span class="math display">\[Miss_{cu} \leftarrow Maternal\
+Substance\ Use \rightarrow Outcome\]</span></li>
+<li><span class="math display">\[Miss_{cu} \leftarrow Maternal\
+Substance\ Use \rightarrow Cannabis\ Use \rightarrow
+Outcome\]</span></li>
+<li><span class="math display">\[Miss_{cu} \leftarrow Maternal\
+Substance\ Use \rightarrow Cannabis\ Use \leftarrow Sex \rightarrow
+Outcome\]</span></li>
 </ol>
-<p>and can all be blocked when <span class="math inline">\(Maternal
-Substance Use\)</span> is adjusted for, where it is possible as <span class="math inline">\(Maternal Substance Use\)</span> is fully observed.
-Then, <span class="math inline">\(Miss_{cu}\)</span> and <span class="math inline">\(Outcome\)</span> are independent conditioned on
-<span class="math inline">\(Maternal Substance Use\)</span>. Hence, as
+<p>and can all be blocked when <span class="math inline">\(Maternal\
+Substance\ Use\)</span> is adjusted for, where it is possible as <span class="math inline">\(Maternal\ Substance\ Use\)</span> is fully
+observed. Then, <span class="math inline">\(Miss_{cu}\)</span> and <span class="math inline">\(Outcome\)</span> are independent conditioned on
+<span class="math inline">\(Maternal\ Substance\ Use\)</span>. Hence, as
 missingness can be explained with observed data, this is MAR.</p>
 <p>Secondly in the Figure 1D, there is an additional open path compared
 to Figure 1B:</p>
-<p><span class="math inline">\(Miss_{cu}\)</span> &lt;- <span class="math inline">\(Outcome\)</span></p>
+<p><span class="math display">\[Miss_{cu} \leftarrow
+Outcome\]</span></p>
 <p>which means that <span class="math inline">\(Outcome\)</span> is
 causing the missingness in Cannabis Use and not the other way around.
 This path can be blocked by conditioning on <span class="math inline">\(Outcome\)</span>, which is fully observed as well.
 Hence, the Missingness in Cannabis Use and <span class="math inline">\(Outcome\)</span> are d-separated conditioned on
-<span class="math inline">\(Maternal Substance Use\)</span> and <span class="math inline">\(Outcome\)</span>. Therefore, missingness is
+<span class="math inline">\(Maternal\ Substance\ Use\)</span> and <span class="math inline">\(Outcome\)</span>. Therefore, missingness is
 MAR.</p>
 <p>Lastly, in the Figure 1F, the only open path existing is:</p>
-<p><span class="math inline">\(Miss_{cu}\)</span> &lt;- <span class="math inline">\(Outcome\)</span></p>
+<p><span class="math display">\[Miss_{cu} \leftarrow
+Outcome\]</span></p>
 <p>Hence, the Missingness in Cannabis Use and <span class="math inline">\(Outcome\)</span> are d-separated conditioned on
 <span class="math inline">\(Outcome\)</span> and is MAR.</p>
 </div>
@@ -402,19 +409,27 @@ in Cannabis Use is explained by the Cannabis Use itself, we can say that
 the missingness is not at random. In terms of d-separation, firstly in
 Figure 1C, there are multiple open paths from <span class="math inline">\(Miss_{cu}\)</span> to <span class="math inline">\(Outcome\)</span> :</p>
 <ol style="list-style-type: decimal">
-<li><span class="math inline">\(Miss_{cu}\)</span> &lt;- <span class="math inline">\(Cannabis Use\)</span> -&gt; <span class="math inline">\(Outcome\)</span></li>
-<li><span class="math inline">\(Miss_{cu}\)</span> &lt;- <span class="math inline">\(Cannabis Use\)</span> &lt;- <span class="math inline">\(Sex\)</span> -&gt; <span class="math inline">\(Outcome\)</span></li>
-<li><span class="math inline">\(Miss_{cu}\)</span> &lt;- <span class="math inline">\(Maternal Substance Use\)</span> -&gt; <span class="math inline">\(Outcome\)</span></li>
-<li><span class="math inline">\(Miss_{cu}\)</span> &lt;- <span class="math inline">\(Maternal Substance Use\)</span> -&gt; <span class="math inline">\(Cannabis Use\)</span> -&gt; <span class="math inline">\(Outcome\)</span></li>
-<li><span class="math inline">\(Miss_{cu}\)</span> &lt;- <span class="math inline">\(Maternal Substance Use\)</span> -&gt; <span class="math inline">\(Cannabis Use\)</span> &lt;- <span class="math inline">\(Sex\)</span> -&gt; <span class="math inline">\(Outcome\)</span></li>
+<li><span class="math display">\[Miss_{cu} \leftarrow Cannabis\ Use
+\rightarrow Outcome\]</span></li>
+<li><span class="math display">\[Miss_{cu} \leftarrow Cannabis\ Use
+\leftarrow Sex \rightarrow Outcome\]</span></li>
+<li><span class="math display">\[Miss_{cu} \leftarrow Maternal\
+Substance\ Use \rightarrow Outcome\]</span></li>
+<li><span class="math display">\[Miss_{cu} \leftarrow Maternal\
+Substance\ Use \rightarrow Cannabis\ Use \rightarrow
+Outcome\]</span></li>
+<li><span class="math display">\[Miss_{cu} \leftarrow Maternal\
+Substance\ Use \rightarrow Cannabis\ Use \leftarrow Sex \rightarrow
+Outcome\]</span></li>
 </ol>
 <p>Here, the first two paths can only be blocked by conditioning on
 <span class="math inline">\(Cannabis Use\)</span>, which is not fully
 observed. Hence, <span class="math inline">\(Miss_{cu}\)</span> and
 <span class="math inline">\(Outcome\)</span> cannot be d-separated and
 are not independent of each other. Therefore, is MNAR.</p>
-<p>Similarly in Figure 1E, the open path of <span class="math inline">\(Miss_{cu}\)</span> &lt;- <span class="math inline">\(Outcome\)</span> is added to the previous list of
-Figure 1C, which can be blocked by adjusting for <span class="math inline">\(Outcome\)</span>. Still, the <span class="math inline">\(Miss_{cu}\)</span> and <span class="math inline">\(Outcome\)</span> cannot be d-separated, even after
+<p>Similarly in Figure 1E, the open path of <span class="math display">\[Miss_{cu} \leftarrow Outcome\]</span> is added to
+the previous list of Figure 1C, which can be blocked by adjusting for
+<span class="math inline">\(Outcome\)</span>. Still, the <span class="math inline">\(Miss_{cu}\)</span> and <span class="math inline">\(Outcome\)</span> cannot be d-separated, even after
 adjusting for all observed variables and is MNAR.</p>
 </div>
 <div id="question-4" class="section level2">
