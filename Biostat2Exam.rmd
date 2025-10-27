@@ -73,7 +73,9 @@ in Figure 1C : $\mathbf{Missingness In Cannabis Use (R) \sim Maternal Substance 
 
 in Figure 1D : $\mathbf{R  \sim  Maternal Substance Use (M) + Outcome (Y)}$.
 
-First, we simulate data based on the knowledge we know from the above mentioned causal diagrams. Since, there is missingness in exposure, we need to factor in the marginal distribution of $CannibasUse$ into the likelihood. Then, we use the `frm_em()` function to carry out the actual estimation:
+In this question, we try to calculate the Maximum Likelihood estimators of the above mentioned linear regression model of Y. Maximum likelihood here, tries to estimate the regression coefficients that makes the observable data most likely under the model we assume.
+
+First, we simulate data based on the knowledge we know from the above mentioned causal diagrams. Since, there is missingness in exposure, we need to factor in the marginal distribution of $CannibasUse$ into the likelihood. Then, we use the `frm_em()` function to carry out the actual estimation. This function assumes that the missingness is $\textbf{MAR}$, that is, after we account for the observed variables, the missingness does not depend on the unobserved data.
 
 ```{r}
 set.seed(1)
@@ -92,6 +94,7 @@ generate_data <- function(n, dag) {
   X <- rbinom(n, 1, pX(0.5*M, 0.5*S))
   Y <- rnorm(n, mean = beta0 + beta1*M + beta2*S + beta3*X, sd=1)
   
+  # chose the parameters in a way to show bias evidently
   if (dag == "fig1D") {
     # scale the continuous value Y so logit doesn't explode 
     R <- rbinom(n, 1, pX(0.5*M, 3*scale(Y)[,1])) 
@@ -108,7 +111,7 @@ dep <- list(model="linreg", formula=Y ~ X + M + S)
 ind <- list(X = list(model="logistic", formula=X ~ M + S))
 
 
-fit_once <- function(n, dag) {
+fit_frm_em_once <- function(n, dag) {
   dat <- generate_data(n, dag)
   sink(tempfile()) # to suppress the progress bar output
   fit <- frm_em(dat=dat, dep=dep, ind=ind, verbose=FALSE)
@@ -124,10 +127,10 @@ fit_once <- function(n, dag) {
   c(beta_X=beta_X, se_X=se_X, beta_M=beta_M, se_M=se_M, beta_S=beta_S, se_S=se_S)
 }
 
-eval_grid <- function(n_vec, reps, dag){
+eval_ML_grid <- function(n_vec, reps, dag){
   beta_true <- 1
   out <- lapply(n_vec, function(n){
-    M <- replicate(reps, fit_once(n, dag))
+    M <- replicate(reps, fit_frm_em_once(n, dag))
     beta_X <- M["beta_X",]; se_X <- M["se_X",]
     beta_M <- M["beta_M",]; se_M <- M["se_M",]
     beta_S <- M["beta_S",]; se_S <- M["se_S",]
@@ -149,29 +152,106 @@ Now, we compare the ML estimates with the true value $\mathbf{\beta_X = 1}$.
 
 ```{r}
 # should be unbiased for Fig 1D
-# increasing values of n towards infinity to see the asymptotic behavior
+# repeating for increasing values of n towards infinity to discover the asymptotic behavior accurately
 n_vec <- c(1000, 5000, 10000, 50000)
 reps  <- 100
 
-res_1D  <- eval_grid(n_vec, reps, "fig1D")
+res_1D  <- eval_ML_grid(n_vec, reps, "fig1D")
 print(res_1D)
 ```
-As n increases, we see that the mean of ML estimates converges towards the true value 1, bias converges towards 0 and the coverage for $\beta_X, \beta_M, \beta_S$ is above 95%. Hence, we can conclude that the maximum likelihood estimation of the regression coefficients is asymptotically unbiased for Figure 1D.
+
+As n increases, we see that the mean of ML estimates converges towards the true value 1, the biases converges towards 0 and the coverage for $\beta_X, \beta_M, \beta_S$ is above 95%. Hence, we can conclude that the maximum likelihood estimation of the regression coefficients is asymptotically unbiased for Figure 1D. We know that the missingness is MAR according to Figure 1D, hence, the ML estimates produced by `frm_em()` function match the true value.
 
 Next for Figure 1C, we run ML estimation:
 ```{r}
 # should be biased for Fig 1C
-res_1C  <- eval_grid(n_vec, reps, "fig1C")
+res_1C  <- eval_ML_grid(n_vec, reps, "fig1C")
 print(res_1C)
 ```
-Here, as n increases, the mean of ML estimate doesn't converge to the true value, the bias doesn't converge towards 0 and the coverage for $\beta_X, \beta_M, \beta_S$ goes well below 95%. Hence, we can say that the ML estimation of these regression coefficients is biased for Figure 1C where the missingness of the exposure depends on the exposure itself. 
 
+Here, as n increases, the mean of the ML estimates don't converge to the true value, their biases don't converge towards 0 and the coverage for $\beta_X, \beta_M, \beta_S$ goes well below 95%. Hence, we can say that the ML estimation of these regression coefficients is biased for Figure 1C where the missingness of the exposure depends on the exposure itself. Hence, ML estimates couldn't truly represent the true values as the un-explainable missingness was causing the estimates to converge to a pseudo value instead.
 
 
 ## Question 5
 
+Now, for the same linear regression model, let us check whether the complete case analysis estimates are asymptotically unbiased or biased for the causal diagram in Figure 1C and 1D.
+
+In Complete Case Analysis (CCA), we only consider the data that is observed for all variables in the main analysis. To calculate the CCA estimates of the regression coefficients, we simply fit the `lm` model. We reuse the same parameters and function to generate the data from Question 4.
+
+```{r}
+sample_data_1C <- generate_data(1000, "fig1C")
+sample_data_1D <- generate_data(1000, "fig1D")
+
+cc1 <- complete.cases(sample_data_1C)
+cc2 <- complete.cases(sample_data_1D)
+
+tb1 <- table(cc1, sample_data_1C$X)
+print(tb1)
+```
+
+```{r}
+fit_lm_once <- function(n, dag) {
+  dat <- generate_data(n, dag)
+  fit <- lm(formula=Y ~ X + M + S, data=dat)
+  cf  <- coef(fit)
+  beta_X  <- unname(cf["X"])
+  beta_M  <- unname(cf["M"])
+  beta_S  <- unname(cf["S"])
+  
+  c(beta_X=beta_X, beta_M=beta_M, beta_S=beta_S)
+}
+
+eval_CCA_grid <- function(n_vec, reps, dag){
+  beta_true <- 1
+  out <- lapply(n_vec, function(n){
+    M <- replicate(reps, fit_lm_once(n, dag))
+    beta_X <- M["beta_X",]
+    beta_M <- M["beta_M",]
+    beta_S <- M["beta_S",]
+    data.frame(
+      n=n,
+      mean_X = mean(beta_X), bias_X = mean(beta_X)-beta_true, 
+      mean_M = mean(beta_M), bias_M = mean(beta_M)-beta_true, 
+      mean_S = mean(beta_S), bias_S = mean(beta_S)-beta_true
+    )
+  })
+  rbindlist(out)
+}
+```
+
+Now, we compare the CCA estimates with the true value $\mathbf{\beta_X = 1}$.
+
+```{r}
+# should be unbiased for Fig 1C
+# repeating for increasing values of n towards infinity to discover the asymptotic behavior accurately
+n_vec <- c(1000, 5000, 10000, 50000)
+reps  <- 100
+
+res_1C  <- eval_CCA_grid(n_vec, reps, "fig1C")
+print(res_1C)
+```
+
+As n increases, we see that the mean of CCA estimates converges towards the true value 1 and their biases converges towards 0. Hence, we can conclude that the complete case analysis estimation of the regression coefficients is asymptotically unbiased for Figure 1C. In such cases where the missingness of the exposure depends on the exposure itself, discarding the incomplete data is more beneficial towards being unbiased. 
+
+Next for Figure 1D, we run CCA estimation:
+```{r}
+# should be biased for Fig 1D
+res_1D  <- eval_CCA_grid(n_vec, reps, "fig1D")
+print(res_1D)
+```
+
+Here, as n increases, the mean of the CCA estimates doesn't converge to the true value and the bias doesn't converge towards 0. Hence, we can say that the CCA estimation of these regression coefficients is biased for Figure 1D where the missingness of the exposure depends on observable and explainable variables, in this case, the outcome and a covariate. Here, we are potentially discarding an entire set of outcome data as they are missing due to their outcome, leading to a bias in the CCA estimates.
+
+The results above also confirm the potential bias of exposure regression coefficient in CCA based on linear regression mentioned in the Table 1.
 
 ## Question 6 
+
+Now, let us look at the analytic/ mathematical argument as to why CCA is unbiased for Figure 1C, as seen with the help of estimates above. As we know that the missingness of the exposure in Figure 1C is dependent on a covariate and the exposure itself, hence, $\textbf{MNAR}$.
+
+
+
+
+
 
 
 ## Question 7
@@ -183,4 +263,4 @@ Here, as n increases, the mean of ML estimate doesn't converge to the true value
 ## Question 9
 
 
-The assignment took 11.5 hours to complete.
+The assignment took 13 hours to complete.
