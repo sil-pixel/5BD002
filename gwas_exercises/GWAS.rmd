@@ -18,7 +18,7 @@ library(patchwork)
 
 # Explore data file format(s) and describe the dataset
 
-```{r cars}
+```{r}
 # Read .pvar: skip the VCF-style preamble and start at the header line
 pvar <- fread("~/Documents/GitHub/5BD002/gwas_exercises/1kgp3_maf05.pvar", skip = "#CHROM")  # columns: #CHROM, POS, ID, REF, ALT
 setnames(pvar, 1, "CHROM")                          # rename #CHROM -> CHROM for convenience
@@ -167,3 +167,14 @@ ggplot(merged, aes(x = PC1, y = PC2, color = SuperPop)) +
         panel.grid = element_blank())
 
 ```
+
+
+
+
+```{r}
+phe <- fread("~/Documents/GitHub/5BD002/gwas_exercises/GWAS_2/ICAM2/ICAM2_sample.fam",
+             select = c(2,6), header = FALSE, col.names = c("IID", "ICAM2"))
+ggplot(phe, aes(ICAM2)) + geom_histogram(binwidth=0.15)
+```
+
+

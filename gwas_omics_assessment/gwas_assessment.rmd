@@ -1,0 +1,105 @@
+---
+title: "gwas_assessment"
+author: "Silpa"
+date: "2025-10-28"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(data.table)
+library(readr)
+library(ggplot2)
+library(reshape2)
+library(patchwork)
+library(tidyr)
+```
+
+## Genotype dataset and Phenotype distribution
+
+```{r}
+# read bim file 
+alz_phenotype <- fread("~/Documents/GitHub/5BD002/gwas_omics_assessment/ALZ/ALZ_sample.fam",
+             select = c(2,6), header = FALSE, col.names = c("IID", "PhenoTypeValue"))
+
+alz_variants <- fread("~/Documents/GitHub/5BD002/gwas_omics_assessment/ALZ/ALZ_sample.bim",
+             select = c(1,2,4,5,6), header = FALSE, col.names = c("ChrCode", "VarID", "BasePairCoord", "Allele1", "Allele2"))
+```
+
+```{r}
+ggplot(alz_phenotype, aes(factor(PhenoTypeValue))) +
+  geom_bar(fill = "steelblue") +
+  geom_text(stat = "count", aes(label = ..count..), vjust = -0.3) +
+  labs(
+    x = "Phenotype (1 = Control, 2 = Case)",
+    y = "Count",
+    title = "Phenotype Distribution"
+  ) +
+  theme_minimal(base_size = 12)
+```
+
+## PCA 
+
+run bash : 
+
+./plink2 --silent  --bfile ALZ_sample --maf 0.05  --indep-pairwise 500kb 0.1  --out ALZ_indep
+
+./plink2 --silent  --bfile ALZ_sample  --extract ALZ_indep.prune.in  --pca --out ALZ_pca
+
+```{r}
+alz_pca <- fread("~/Documents/GitHub/5BD002/gwas_omics_assessment/ALZ/ALZ_pca.eigenvec")
+alz_merged <- merge(alz_pca, alz_phenotype[, c("IID", "PhenoTypeValue")],
+                    by = c("IID"))
+
+ggplot(alz_merged, aes(PC1, PC2, color = factor(PhenoTypeValue))) +
+  geom_point(alpha = 0.5, size = 1.8) +
+  labs(color = "Phenotype (1 = Control, 2 = Case)",
+       title = "PCA of Genotype Data (colored by Case/Control)")
+
+# does the phenotype vary by "ancestry" (PCs)
+ggplot(alz_merged, aes(PC1, PhenoTypeValue)) + geom_point() + geom_smooth()
+```
+
+Show all 10 PCA plots with phenotype
+```{r}
+m_long <- alz_merged %>%
+  pivot_longer(
+    cols = starts_with("PC"),
+    names_to = "PC",
+    values_to = "PC_value"
+  )
+ggplot(m_long, aes(PC_value, PhenoTypeValue, color = factor(PhenoTypeValue))) +
+  geom_point(alpha = 0.7, size = 1) +
+  geom_smooth(se = FALSE, color = "blue") +
+  facet_wrap(~ PC, ncol = 5) +     # <---- 2 rows × 5 columns
+  labs(
+    x = "Principal Component Value",
+    y = "Phenotype (1 = Control, 2 = Case)",
+    title = "Relationship between PCA Components and Phenotype"
+  )
+```
+
+Show the statistical association of PCAs with Phenotype:
+
+```{r}
+alz_merged$Pheno01 <- ifelse(alz_merged$PhenoTypeValue == 2, 1, 0)
+PCs_fit_Phenotype <- glm(Pheno01 ~ PC1 + PC2 + PC3 + PC4 + PC5 + PC6 + PC7 + PC8 + PC9 + PC10, data = alz_merged, family = binomial())
+summary(PCs_fit_Phenotype)
+```
+
+
+## GWAS without PCA adjustment
+
+```{r}
+```
+
+## GWAS with PCA adjustment
+
+```{r}
+```
+
+## LD clumping of GWAS results
+
+```{r}
+```
+

@@ -1,0 +1,13 @@
+PLINK v2.0.0-a.7 64-bit (19 Oct 2025)
+Options in effect:
+  --out ALZ_pca
+  --pca 10
+
+Hostname: Silpas-Laptop.local
+Working directory: /Users/silpasoninallacheruvu/Documents/GitHub/5BD002/gwas_omics_assessment/ALZ
+Start time: Tue Oct 28 22:27:28 2025
+
+Error: No input dataset.
+For more info, try "plink2 --help <flag name>" or "plink2 --help | more".
+
+End time: Tue Oct 28 22:27:28 2025

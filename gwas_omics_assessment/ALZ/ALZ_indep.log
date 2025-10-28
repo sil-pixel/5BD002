@@ -1,0 +1,27 @@
+PLINK v2.0.0-a.7 64-bit (19 Oct 2025)
+Options in effect:
+  --bfile ALZ_sample
+  --indep-pairwise 500kb 0.1
+  --maf 0.05
+  --out ALZ_indep
+  --silent
+
+Hostname: Silpas-Laptop.local
+Working directory: /Users/silpasoninallacheruvu/Documents/GitHub/5BD002/gwas_omics_assessment/ALZ
+Start time: Tue Oct 28 21:35:47 2025
+
+Random number seed: 1761683747
+16384 MiB RAM detected; reserving 8192 MiB for main workspace.
+Using up to 8 compute threads.
+10000 samples (0 females, 0 males, 10000 ambiguous; 10000 founders) loaded from
+ALZ_sample.fam.
+795124 variants loaded from ALZ_sample.bim.
+1 binary phenotype loaded (5000 cases, 5000 controls).
+Calculating allele frequencies... done.
+64585 variants removed due to allele frequency threshold(s)
+(--maf/--max-maf/--mac/--max-mac).
+730539 variants remaining after main filters.
+--indep-pairwise (7 compute threads): 645337/730539 variants removed.
+Variant lists written to ALZ_indep.prune.in and ALZ_indep.prune.out .
+
+End time: Tue Oct 28 21:35:49 2025
