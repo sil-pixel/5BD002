@@ -63,15 +63,15 @@ $\mathbf{Outcome \sim Maternal Substance Use + Sex + Cannabis Use}$
 
 $\mathbf{\Rightarrow Y = \beta_0 + \beta_1 \times M + \beta_2 \times S + \beta_3 \times X}$
 
-Here, in both Figure 1C and 1D, we know that the exposure: 
+where $Y$ stands for the $Outcome$, $X$ denotes the exposure, which is $Cannabis Use$, $M$ is $Maternal Substance Use$, $S$ is $Sex$ and $R$ is Missingness In Cannabis Use, $Miss_{Cu}$
 
-$\mathbf{Cannabis Use (X) \sim Maternal Substance Use (M) + Sex (S)}$.
+Here, in both Figure 1C and 1D, we know that the exposure:  $\mathbf{X \sim M + S}$.
 
 Although,
 
-in Figure 1C : $\mathbf{Missingness In Cannabis Use (R) \sim Maternal Substance Use (M) + Cannabis Use (X)}$,  
+in Figure 1C : $\mathbf{R \sim M + X}$,  
 
-in Figure 1D : $\mathbf{R  \sim  Maternal Substance Use (M) + Outcome (Y)}$.
+in Figure 1D : $\mathbf{R  \sim  M + Y}$.
 
 In this question, we try to calculate the Maximum Likelihood estimators of the above mentioned linear regression model of Y. Maximum likelihood here, tries to estimate the regression coefficients that makes the observable data most likely under the model we assume.
 
@@ -91,10 +91,11 @@ generate_data <- function(n, dag) {
   
   M <- rbinom(n, 1, 0.5)
   S <- rbinom(n, 1, 0.5)
-  X <- rbinom(n, 1, pX(0.5*M, 0.5*S))
+  X <- rbinom(n, 2, pX(0.5*M, 0.5*S))
   Y <- rnorm(n, mean = beta0 + beta1*M + beta2*S + beta3*X, sd=1)
   
-  # chose the parameters in a way to show bias evidently
+  
+  # chosen the parameters in a way to show bias evidently
   if (dag == "fig1D") {
     # scale the continuous value Y so logit doesn't explode 
     R <- rbinom(n, 1, pX(0.5*M, 3*scale(Y)[,1])) 
@@ -179,17 +180,6 @@ Now, for the same linear regression model, let us check whether the complete cas
 In Complete Case Analysis (CCA), we only consider the data that is observed for all variables in the main analysis. To calculate the CCA estimates of the regression coefficients, we simply fit the `lm` model. We reuse the same parameters and function to generate the data from Question 4.
 
 ```{r}
-sample_data_1C <- generate_data(1000, "fig1C")
-sample_data_1D <- generate_data(1000, "fig1D")
-
-cc1 <- complete.cases(sample_data_1C)
-cc2 <- complete.cases(sample_data_1D)
-
-tb1 <- table(cc1, sample_data_1C$X)
-print(tb1)
-```
-
-```{r}
 fit_lm_once <- function(n, dag) {
   dat <- generate_data(n, dag)
   fit <- lm(formula=Y ~ X + M + S, data=dat)
@@ -246,21 +236,97 @@ The results above also confirm the potential bias of exposure regression coeffic
 
 ## Question 6 
 
-Now, let us look at the analytic/ mathematical argument as to why CCA is unbiased for Figure 1C, as seen with the help of estimates above. As we know that the missingness of the exposure in Figure 1C is dependent on a covariate and the exposure itself, hence, $\textbf{MNAR}$.
+Now, let us look at the mathematical argument as to why CCA is unbiased for Figure 1C, as seen with the help of estimates above. As we know that the missingness of the exposure in Figure 1C is dependent on a covariate and the exposure itself, hence, $\textbf{MNAR}$.
 
+Hence, the missingness of the exposure in Figure 1C is independent of the outcome given exposure and the covariate $Maternal Substance Use$. 
 
+We can say that: 
 
+$\mathbf{ R \perp Y | (X, M)} \Leftrightarrow \mathbf{ R \perp Y | (X, M, S)}$
 
+where $\mathbf{S}$ is Sex which also is not associated with the missingness in Cannabis Use. 
 
+To prove that CCA is unbiased, we can look at the true estimator and the CCA estimator of Y and check if they are identical.
+
+The true estimator is $\mathbf{E[Y \mid X, M, S]}$.
+
+The CCA estimator is $\mathbf{E[Y \mid X, M, S, R=1]}$.
+
+But, for the figure 1C, due to the conditional independence of R and Y given (X, M, S), we can say that:
+
+$\mathbf{P (Y \mid X, M, S, R=1) = P(Y \mid X, M, S)}$
+
+Hence, the CCA estimator for figure 1C is deduced to:
+
+$\mathbf{E[Y \mid X, M, S, R=1] \Rightarrow E[Y \mid X, M, S]}$.
+
+Therefore, we can say that the CCA is unbiased when the missingness pattern is conditionally independent of the outcome given exposure and covariates as seen in Figure 1C. 
 
 
 ## Question 7
 
+The NPSEM corresponding to the causal diagram in the figure 1C looks like this:
 
+$$ 
+\left.
+\begin{array}{l}
+S := f_{S} (\varepsilon_S) \\
+M := f_{M} (\varepsilon_M) \\
+X := f_{X} (M, S, \varepsilon_X) \\
+Y := f_{Y} (X, M, S, \varepsilon_Y) \\
+R := f_{R} (M, X, \varepsilon_R)
+\end{array}
+\right\}
+$$
+
+We can also rewrite this as:
+
+$$ 
+\left.
+\begin{array}{l}
+S := f_{S} (\varepsilon_S) \\
+M := f_{M} (\varepsilon_M) \\
+X := f_{X} (f_{M} (\varepsilon_M), f_{S} (\varepsilon_S), \varepsilon_X) \\
+Y := f_{Y} (f_{X} (f_{M} (\varepsilon_M), f_{S} (\varepsilon_S), \varepsilon_X), f_{M} (\varepsilon_M), f_{S} (\varepsilon_S), \varepsilon_Y) \\
+R := f_{R} (f_{M} (\varepsilon_M), f_{X} (f_{M} (\varepsilon_M), f_{S} (\varepsilon_S), \varepsilon_X), \varepsilon_R)
+\end{array}
+\right\}
+$$
+
+Since, the auxiliary variables are not included in the main analysis and the absence of missing data the main analysis is assumed to  give unbiased results, I have not added any additional factor $U$ contributing to the variables. Hence, we can assume that the error terms $\varepsilon_S$, $\varepsilon_M$, $\varepsilon_X$, $\varepsilon_R$ and $\varepsilon_Y$ are independent.
+
+
+Similarly, the NPSEM of figure 1D is:
+
+$$ 
+\left.
+\begin{array}{l}
+S := f_{S} (\varepsilon_S) \\
+M := f_{M} (\varepsilon_M) \\
+X := f_{X} (M, S, \varepsilon_X) \\
+Y := f_{Y} (X, M, S, \varepsilon_Y) \\
+R := f_{R} (M, Y, \varepsilon_R) 
+\end{array}
+\right\}
+$$
+also, represented as:
+
+$$ 
+\left.
+\begin{array}{l}
+S := f_{S} (\varepsilon_S) \\
+M := f_{M} (\varepsilon_M) \\
+X := f_{X} (f_{M} (\varepsilon_M), f_{S} (\varepsilon_S), \varepsilon_X) \\
+Y := f_{Y} (f_{X} (f_{M} (\varepsilon_M), f_{S} (\varepsilon_S), \varepsilon_X), f_{M} (\varepsilon_M), f_{S} (\varepsilon_S), \varepsilon_Y) \\
+R := f_{R} (f_{M} (\varepsilon_M), f_{Y} (f_{X} (f_{M} (\varepsilon_M), f_{S} (\varepsilon_S), \varepsilon_X), f_{M} (\varepsilon_M), f_{S} (\varepsilon_S), \varepsilon_Y), \varepsilon_R)
+\end{array}
+\right\}
+$$
+The error terms are assumed to be independent here as well. 
 ## Question 8
 
 
 ## Question 9
 
 
-The assignment took 13 hours to complete.
+The assignment took 15.25 hours to complete.

@@ -6,5 +6,5 @@ gwas_exercises/freq_results.afreq
 gwas_exercises/pruned_snps.prune.out
 gwas_exercises/GWAS_2/ICAM2_P13598_OID20248_v1_Cardiometabolic
 gwas_exercises/GWAS_2/ICAM2/ICAM2_sample.bed
-gwas_assessment/PGCALZ2ExcludingUKBand23andME_METALInverseVariance_MetaAnalysis (1).txt
-gwas_assessment/ALZ/ALZ_sample.bed
+gwas_omics_assessment/PGCALZ2ExcludingUKBand23andME_METALInverseVariance_MetaAnalysis (1).txt
+gwas_omics_assessment/ALZ/ALZ_sample.bed
