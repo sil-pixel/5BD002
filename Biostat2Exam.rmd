@@ -91,7 +91,7 @@ generate_data <- function(n, dag) {
   
   M <- rbinom(n, 1, 0.5)
   S <- rbinom(n, 1, 0.5)
-  X_continuous <- 1 + 0.5*M + 0.5*S + rnorm(n, 0, 1)
+  X_continuous <- 1 + 0.8*M + 0.5*S + rnorm(n, 0, 1)
   # Convert to values 0,1,2 (categorical cannabis use), but still numeric
   X <- pmin(pmax(round(X_continuous), 0), 2)
   Y <- rnorm(n, mean = beta0 + betaM_true*M + betaS_true*S + betaX_true*X, sd=1)

@@ -1,0 +1,26 @@
+PLINK v2.0.0-a.7 64-bit (19 Oct 2025)
+Options in effect:
+  --bfile ALZ_sample
+  --covar ALZ_pca.eigenvec
+  --covar-name PC1-PC2
+  --glm hide-covar
+  --out ALZ_GWAS_adj
+  --silent
+
+Hostname: Silpas-Laptop.local
+Working directory: /Users/silpasoninallacheruvu/Documents/GitHub/5BD002/gwas_omics_assessment/ALZ
+Start time: Wed Oct 29 14:02:21 2025
+
+Random number seed: 1761742941
+16384 MiB RAM detected; reserving 8192 MiB for main workspace.
+Using up to 8 compute threads.
+10000 samples (0 females, 0 males, 10000 ambiguous; 10000 founders) loaded from
+ALZ_sample.fam.
+795124 variants loaded from ALZ_sample.bim.
+1 binary phenotype loaded (5000 cases, 5000 controls).
+2 covariates loaded from ALZ_pca.eigenvec.
+Calculating allele frequencies... done.
+--glm logistic-Firth hybrid regression on phenotype 'PHENO1': done.
+Results written to ALZ_GWAS_adj.PHENO1.glm.logistic.hybrid .
+
+End time: Wed Oct 29 14:03:28 2025
