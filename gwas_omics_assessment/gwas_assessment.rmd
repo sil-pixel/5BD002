@@ -13,6 +13,7 @@ library(ggplot2)
 library(reshape2)
 library(patchwork)
 library(tidyr)
+library(qqman)
 ```
 
 ## Genotype dataset and Phenotype distribution
@@ -90,8 +91,19 @@ summary(PCs_fit_Phenotype)
 
 ## GWAS without PCA adjustment
 
+run : ./plink2 --silent --bfile ALZ_sample --glm allow-no-covars hide-covar  --out ALZ_GWAS_noPC
+
 ```{r}
+gwas_unadj <- fread("~/Documents/GitHub/5BD002/gwas_omics_assessment/ALZ/ALZ_GWAS_noPC.PHENO1.glm.logistic.hybrid")
+gwas_unadj[, P := pmax(1e-20, P)]
+manhattan(gwas_unadj, chr = "#CHROM", bp = "POS", snp = "ID", p = "P",
+          main = "GWAS Manhattan Plot (No PC Adjustment)")
 ```
+
+```{r}
+qq(gwas_unadj$P)
+```
+
 
 ## GWAS with PCA adjustment
 

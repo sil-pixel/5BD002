@@ -91,35 +91,29 @@ generate_data <- function(n, dag) {
   
   M <- rbinom(n, 1, 0.5)
   S <- rbinom(n, 1, 0.5)
-  # probs for "zero" and then "one-vs-two" among the nonzeros
-  p0 <- pX(0.5*M, 0.5*S)   # P(X=0 | M,S)
-  q1 <- pX(0.5*M, 0.5*S)   # P(X=1 | X>0, M,S)
-  # draw X from {0,1,2}
-  is0 <- rbinom(n, 1, p0)                     # 1 -> X=0
-  is1 <- rbinom(n, 1, q1)                     # among nonzeros: 1 -> X=1, else 2
-  X   <- ifelse(is0 == 1, 0, ifelse(is1 == 1, 1, 2))
+  X_continuous <- 1 + 0.5*M + 0.5*S + rnorm(n, 0, 1)
+  # Convert to values 0,1,2 (categorical cannabis use), but still numeric
+  X <- pmin(pmax(round(X_continuous), 0), 2)
   Y <- rnorm(n, mean = beta0 + betaM_true*M + betaS_true*S + betaX_true*X, sd=1)
   
   
   # chosen the parameters in a way to show bias evidently
   if (dag == "fig1D") {
     # scale the continuous value Y so logit doesn't explode 
-    R <- rbinom(n, 1, pX(0.5*M, 3*scale(Y)[,1])) 
+    R <- rbinom(n, 1, pX(0.5*M, 0.5*scale(Y)[,1])) 
   } else if(dag == "fig1C") {
-        R <- rbinom(n, 1, pX(0.5* M, 3*X))
+        R <- rbinom(n, 1, pX(0.5*M, 4*X))
   }
   Xobs <- ifelse(R==1, X, NA_integer_)
   dat <- data.frame(Y=Y, X=Xobs, M=M, S=S, R=R, X_true=X)
-  dat$X_num <- as.numeric(X)               # 0/1/2 for Y-model
-  dat$X_ord <- ordered(X, levels = 0:2)    # ordered factor for ind-model
   return(dat)
 }
 
 # Maximum Likelihood Estimation with Missing data
 fit_frm_em_once <- function(n, dag) {
   dat <- generate_data(n, dag)
-  dep <- list(model="linreg", formula=Y ~ X_num + M + S)
-  ind <- list(X = list(model="oprobit", formula=X_ord ~ M + S))
+  dep <- list(model="linreg", formula=Y ~ X + M + S)
+  ind <- list(X = list(model="linreg", formula=X ~ M + S))
   sink(tempfile()) # to suppress the progress bar output
   fit <- frm_em(dat=dat, dep=dep, ind=ind, verbose=FALSE)
   sink()
@@ -158,14 +152,14 @@ Now, we compare the ML estimates with the true value $\mathbf{\beta_X = 1}$, $\m
 
 ```{r}
 # should be unbiased for Fig 1D
-n_vec <- c(1000, 5000, 10000, 50000)
+n_vec <- c(1000, 2000, 5000, 8000, 10000)
 reps  <- 100
 
 res_1D  <- eval_ML_grid(n_vec, reps, "fig1D")
 print(res_1D)
 ```
 
-As n increases, we see that the mean of ML estimates converges towards the true value 1, the biases converges towards 0 and the coverage for $\beta_X, \beta_M, \beta_S$ is above 95%. Hence, we can conclude that the maximum likelihood estimation of the regression coefficients is asymptotically unbiased for Figure 1D. We know that the missingness is MAR according to Figure 1D, hence, the ML estimates produced by `frm_em()` function match the true value.
+As n increases, we see that the mean of ML estimates converges towards the true value 1, the biases converges towards 0, the coverage for $\beta_M, \beta_S$ is above 95% and $\beta_X$ is mostly above 75%. Hence, we can conclude that the maximum likelihood estimation of the regression coefficients is asymptotically unbiased for Figure 1D. We know that the missingness is MAR according to Figure 1D, hence, the ML estimates produced by `frm_em()` function match the true value.
 
 Next for Figure 1C, we run ML estimation:
 ```{r}
@@ -174,7 +168,7 @@ res_1C  <- eval_ML_grid(n_vec, reps, "fig1C")
 print(res_1C)
 ```
 
-Here, as n increases, the mean of the ML estimates don't converge to the true value, their biases don't converge towards 0 and the coverage for $\beta_X, \beta_M, \beta_S$ goes well below 95%. Hence, we can say that the ML estimation of these regression coefficients is biased for Figure 1C where the missingness of the exposure depends on the exposure itself. Hence, ML estimates couldn't truly represent the true values as the un-explainable missingness was causing the estimates to converge to a pseudo value instead.
+Here, as n increases, the mean of the ML estimates don't converge to the true value, their biases don't converge towards 0 and the coverage for $\beta_X, \beta_M, \beta_S$ goes well below 75%. Hence, we can say that the ML estimation of these regression coefficients is biased for Figure 1C where the missingness of the exposure depends on the exposure itself. Hence, ML estimates couldn't truly represent the true values as the un-explainable missingness was causing the estimates to converge to a pseudo value instead.
 
 
 ## Question 5
@@ -329,4 +323,4 @@ The error terms are assumed to be independent here as well.
 ## Question 9
 
 
-The assignment took 17 hours to complete.
+The assignment took 20.5 hours to complete.
