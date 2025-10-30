@@ -319,8 +319,49 @@ The error terms are assumed to be independent here as well.
 
 ## Question 8
 
+Let us check if we see a statistical association between $CannabisUse$ and $Outcome$ when adjusted for $MaternalSubstanceUse$ and $Sex$, prove a causal effect from $CannabisUse$ on the $Outcome$ in the case of Figure 1C and 1D. There are several open paths from $CannabisUse$ to $Outcome$ in both the figures. Once we block all these open paths passing through various covariates and still see a statistical association (after adjusting for these covariates), then it means that there is a causal effect from $CannabisUse$ to $Outcome$. Hence, assuming that there is no direct arrow from $CannabisUse$ to $Outcome$, if we can show that they are d-separated conditional on covariates, we can prove the causal effect. 
+
+
+First, for Figure 1C:
+
+The open paths from $CannabisUse$ to $Outcome$, assuming that there is no direct arrow from $CannabisUse$ to $Outcome$:
+
+1. $$CannabisUse  \leftarrow Sex \rightarrow  Outcome$$
+
+where $Sex$ is a fork and it needs to be conditioned for to block the path by the first rule. 
+
+
+2. $$CannabisUse  \leftarrow Maternal Substance Use \rightarrow  Outcome$$
+
+where $Maternal Substance Use$ is a fork as well and blocks the open path when conditioned for. 
+
+3. $$CannabisUse \rightarrow Miss_{cu} \leftarrow Maternal Substance  Use \rightarrow  Outcome$$
+
+where $Miss_{cu}$ is an inverted fork and need not be conditioned for to block the path by the second rule. Conditioning the fork $Maternal Substance  Use$ is enough to block this path.
+
+Hence, 
+$$CannabisUse \perp_{d} Outcome \mid MaternalSubstanceUse, Sex$$ 
+
+meaning there are $CannabisUse$ and $Outcome$ are statistically independent when adjusted for $MaternalSubstanceUse$ and $Sex$. And if we see a statistical association in the complete case analysis, which is asymptotically unbiased for Figure 1C, we can say that CCA is a valid test to prove that there is a direct causal effect from $CannabisUse$ to $Outcome$. 
+
+
+Now, for Figure 1D:
+
+The open paths from $CannabisUse$ to $Outcome$, assuming that there is no direct arrow from $CannabisUse$ to $Outcome$:
+
+1. $$CannabisUse  \leftarrow Sex \rightarrow  Outcome$$
+
+2. $$CannabisUse  \leftarrow Maternal Substance Use \rightarrow  Outcome$$
+
+3. $$CannabisUse  \leftarrow Maternal Substance Use \rightarrow Miss_{cu} \leftarrow Outcome$$
+
+and they can all be blocked by conditioning on $MaternalSubstanceUse$ and $Sex$ and not conditioning on $Miss_{cu}$. Hence, again 
+$$CannabisUse \perp_{d} Outcome \mid MaternalSubstanceUse, Sex$$ 
+
+meaning they are statistically independent when adjusted for $MaternalSubstanceUse$ and $Sex$. And if we see a statistical association in the complete case analysis we can say that there is a direct causal effect from $CannabisUse$ to $Outcome$. Even though, CCA is asymptotically biased for Figure 1D, I would say that it can be used to prove the causal effect by statistical association, but maybe not for estimating the causal effect.
+
 
 ## Question 9
 
 
-The assignment took 20.5 hours to complete.
+The assignment took 21 hours to complete.
