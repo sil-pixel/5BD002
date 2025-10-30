@@ -9,6 +9,7 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 library(mdmb)
 library(data.table)
+library(dagitty)
 set.seed(42)
 ```
 
@@ -21,17 +22,17 @@ The Missingness in Cannabis Use does not depend on the outcome or the covariates
 
 By definition, Missing at Random (MAR) is when the missingness in Cannabis Use can be explained by associations with the observed data, specifically fully observed data of covariates or outcome or both. Which is what we observe in Figure 1B, 1F and 1D respectively. In terms of d-separation, in the Figure 1B, there are multiple open paths from $Miss_{cu}$ to $Outcome$ : 
 
-1. $$Miss_{cu} \leftarrow Maternal\ Substance\ Use \rightarrow Outcome$$
-2. $$Miss_{cu} \leftarrow Maternal\ Substance\ Use \rightarrow Cannabis\ Use \rightarrow Outcome$$
-3. $$Miss_{cu} \leftarrow Maternal\ Substance\ Use \rightarrow Cannabis\ Use \leftarrow Sex \rightarrow Outcome$$
+1. $$Miss_{cu} \leftarrow Maternal Substance Use \rightarrow Outcome$$
+2. $$Miss_{cu} \leftarrow Maternal Substance Use \rightarrow Cannabis Use \rightarrow Outcome$$
+3. $$Miss_{cu} \leftarrow Maternal Substance Use \rightarrow Cannabis Use \leftarrow Sex \rightarrow Outcome$$
 
-and can all be blocked when $Maternal\ Substance\ Use$ is adjusted for, where it is possible as $Maternal\ Substance\ Use$ is fully observed. Then, $Miss_{cu}$ and $Outcome$ are independent conditioned on $Maternal\ Substance\ Use$. Hence, as missingness can be explained with observed data, this is MAR.
+and can all be blocked by adjusting for $MaternalSubstanceUse$ alone, and it is possible as $Maternal SubstanceUse$ is fully observed. Then, $Miss_{cu}$ and $Outcome$ are independent conditioned on $Maternal Substance Use$. Hence, as missingness can be explained with observed data, this is MAR.
 
 Secondly in the Figure 1D, there is an additional open path compared to Figure 1B: 
 
 $$Miss_{cu} \leftarrow Outcome$$
 
-which means that $Outcome$ is causing the missingness in Cannabis Use and not the other way around. This path can be blocked by conditioning on $Outcome$, which is fully observed as well. Hence, the Missingness in Cannabis Use and $Outcome$ are d-separated conditioned on $Maternal\ Substance\ Use$ and $Outcome$. Therefore, missingness is MAR. 
+which means that $Outcome$ is causing the missingness in Cannabis Use. This path can be blocked by conditioning on $Outcome$, which is fully observed as well. Hence, the Missingness in Cannabis Use and $Outcome$ are d-separated conditioned on $Maternal\ Substance\ Use$ and $Outcome$. Therefore, missingness is MAR. 
 
 Lastly, in the Figure 1F, the only open path existing is:
 
@@ -62,9 +63,9 @@ The linear regression model is:
 
 $\mathbf{Outcome \sim Maternal Substance Use + Sex + Cannabis Use}$
 
-$\mathbf{\Rightarrow Y = \beta_0 + \beta_1 \times M + \beta_2 \times S + \beta_3 \times X}$
+$\mathbf{\Rightarrow Y = \beta_0 + \beta_M \times M + \beta_S \times S + \beta_X \times X}$
 
-where $Y$ stands for the $Outcome$, $X$ denotes the exposure, which is $Cannabis Use$, $M$ is $Maternal Substance Use$, $S$ is $Sex$ and $R$ is Missingness In Cannabis Use, $Miss_{Cu}$
+where $Y$ stands for the $Outcome$, $X$ denotes the exposure, which is $Cannabis Use$, $M$ is $Maternal Substance Use$, $S$ is $Sex$ and $R$ is Missingness In Cannabis Use, $Miss_{Cu}$.
 
 Here, in both Figure 1C and 1D, we know that the exposure:  $\mathbf{X \sim M + S}$.
 
@@ -74,12 +75,12 @@ in Figure 1C : $\mathbf{R \sim M + X}$,
 
 in Figure 1D : $\mathbf{R  \sim  M + Y}$.
 
-In this question, we try to calculate the Maximum Likelihood estimators of the above mentioned linear regression model of Y. Maximum likelihood here, tries to estimate the regression coefficients that makes the observable data most likely under the model we assume.
+In this question, we try to calculate the Maximum Likelihood estimators of parameters $\beta_0, \beta_X, \beta_M, \beta_S$ in the above mentioned linear regression model of Y. Maximum likelihood here, tries to estimate the regression coefficients that makes the observable data most likely under the model we assume.
 
-First, we simulate data based on the knowledge we know from the above mentioned causal diagrams. Since, there is missingness in exposure, we need to factor in the marginal distribution of $CannibasUse$ into the likelihood. Then, we use the `frm_em()` function to carry out the actual estimation. This function assumes that the missingness is $\textbf{MAR}$, that is, after we account for the observed variables, the missingness does not depend on the unobserved data.
+First, we simulate data based on the knowledge we know from the above mentioned causal diagrams. Since, there is missingness in the exposure, we need to factor in the marginal distribution of $CannibasUse$ into the likelihood. Then, we use the `frm_em()` function to carry out the actual estimation. This function assumes that the missingness is $\textbf{MAR}$, that is, after we account for the observed variables, the missingness does not depend on the unobserved data.
 
 ```{r}
-beta0 <- 0
+beta0_true <- 1
 betaX_true <- 1
 betaM_true <- 1
 betaS_true <- 1
@@ -94,7 +95,7 @@ generate_data <- function(n, dag) {
   X_continuous <- 1 + 0.8*M + 0.5*S + rnorm(n, 0, 1)
   # Convert to values 0,1,2 (categorical cannabis use), but still numeric
   X <- pmin(pmax(round(X_continuous), 0), 2)
-  Y <- rnorm(n, mean = beta0 + betaM_true*M + betaS_true*S + betaX_true*X, sd=1)
+  Y <- rnorm(n, mean = beta0_true + betaM_true*M + betaS_true*S + betaX_true*X, sd=1)
   
   
   # chosen the parameters in a way to show bias evidently
@@ -118,6 +119,8 @@ fit_frm_em_once <- function(n, dag) {
   fit <- frm_em(dat=dat, dep=dep, ind=ind, verbose=FALSE)
   sink()
   cf  <- coef(fit)
+  beta_0 <- unname(cf["Y ON (Intercept)"])
+  se_0 <- unname(fit$se["Y ON (Intercept)"])
   beta_X  <- unname(cf["Y ON X"])
   se_X  <- unname(fit$se["Y ON X"])
   beta_M  <- unname(cf["Y ON M"])
@@ -125,20 +128,23 @@ fit_frm_em_once <- function(n, dag) {
   beta_S  <- unname(cf["Y ON S"])
   se_S  <- unname(fit$se["Y ON S"])
   
-  c(beta_X=beta_X, se_X=se_X, beta_M=beta_M, se_M=se_M, beta_S=beta_S, se_S=se_S)
+  c(beta_0=beta_0, se_0=se_0, beta_X=beta_X, se_X=se_X, beta_M=beta_M, se_M=se_M, beta_S=beta_S, se_S=se_S)
 }
 
 eval_ML_grid <- function(n_vec, reps, dag){
   out <- lapply(n_vec, function(n){
     M <- replicate(reps, fit_frm_em_once(n, dag))
+    beta_0 <- M["beta_0",]; se_0 <- M["se_0",]
     beta_X <- M["beta_X",]; se_X <- M["se_X",]
     beta_M <- M["beta_M",]; se_M <- M["se_M",]
     beta_S <- M["beta_S",]; se_S <- M["se_S",]
+    coverage_0 <- mean((beta_0 - 1.96*se_0) <= beta0_true & (beta_0 + 1.96*se_0) >= beta0_true)
     coverage_X <- mean((beta_X - 1.96*se_X) <= betaX_true & (beta_X + 1.96*se_X) >= betaX_true)
     coverage_M <- mean((beta_M - 1.96*se_M) <= betaM_true & (beta_M + 1.96*se_M) >= betaM_true)
     coverage_S <- mean((beta_S - 1.96*se_S) <= betaS_true & (beta_S + 1.96*se_S) >= betaS_true)
     data.frame(
       n=n,
+      mean_Intercept = mean(beta_0), bias_Intercept = mean(beta_0)-beta0_true, coverage_Intercept = coverage_0, 
       mean_X = mean(beta_X), bias_X = mean(beta_X)-betaX_true, coverage_X = coverage_X, 
       mean_M = mean(beta_M), bias_M = mean(beta_M)-betaM_true, coverage_M = coverage_M, 
       mean_S = mean(beta_S), bias_S = mean(beta_S)-betaS_true, coverage_S = coverage_S
@@ -148,7 +154,7 @@ eval_ML_grid <- function(n_vec, reps, dag){
 }
 ```
 
-Now, we compare the ML estimates with the true value $\mathbf{\beta_X = 1}$, $\mathbf{\beta_M = 1}$ and $\mathbf{\beta_S = 1}$. I am repeating the simulation for increasing values of n reaching towards infinity to discover the asymptotic behavior accurately.
+Now, we compare the ML estimates with the true value $\mathbf{\beta_0 = 1}$, $\mathbf{\beta_X = 1}$, $\mathbf{\beta_M = 1}$ and $\mathbf{\beta_S = 1}$. I am repeating the simulation for increasing values of n reaching towards infinity to discover the asymptotic behavior accurately.
 
 ```{r}
 # should be unbiased for Fig 1D
@@ -159,7 +165,7 @@ res_1D  <- eval_ML_grid(n_vec, reps, "fig1D")
 print(res_1D)
 ```
 
-As n increases, we see that the mean of ML estimates converges towards the true value 1, the biases converges towards 0, the coverage for $\beta_M, \beta_S$ is above 95% and $\beta_X$ is mostly above 75%. Hence, we can conclude that the maximum likelihood estimation of the regression coefficients is asymptotically unbiased for Figure 1D. We know that the missingness is MAR according to Figure 1D, hence, the ML estimates produced by `frm_em()` function match the true value.
+As n increases, we see that the mean of ML estimates converges towards the true values, the biases converges towards 0, the coverage for $\beta_M, \beta_S$ is above 95% and $\beta_X$ is mostly above 75%, even though $\beta_0$ coverage goes below 50%. Hence, we can conclude that the maximum likelihood estimation of the regression coefficients is asymptotically unbiased for Figure 1D. We know that the missingness is MAR according to Figure 1D, hence, the ML estimates produced by `frm_em()` function match the true values.
 
 Next for Figure 1C, we run ML estimation:
 ```{r}
@@ -168,7 +174,7 @@ res_1C  <- eval_ML_grid(n_vec, reps, "fig1C")
 print(res_1C)
 ```
 
-Here, as n increases, the mean of the ML estimates don't converge to the true value, their biases don't converge towards 0 and the coverage for $\beta_X, \beta_M, \beta_S$ goes well below 75%. Hence, we can say that the ML estimation of these regression coefficients is biased for Figure 1C where the missingness of the exposure depends on the exposure itself. Hence, ML estimates couldn't truly represent the true values as the un-explainable missingness was causing the estimates to converge to a pseudo value instead.
+Here, as n increases, the mean of the ML estimates don't converge to their true values, their biases don't converge towards 0 and the coverage for $\beta_X, \beta_M, \beta_0$ goes well below 30% and goes below 75% for $\beta_S$. Hence, we can say that the ML estimation of these regression coefficients is biased for Figure 1C where the missingness of the exposure depends on the exposure itself. Hence, ML estimates couldn't truly represent the true values as the un-explainable missingness was causing the estimates to converge to a pseudo value instead.
 
 
 ## Question 5
@@ -182,21 +188,24 @@ fit_lm_once <- function(n, dag) {
   dat <- generate_data(n, dag)
   fit <- lm(formula=Y ~ X + M + S, data=dat)
   cf  <- coef(fit)
+  beta_0  <- unname(cf["(Intercept)"])
   beta_X  <- unname(cf["X"])
   beta_M  <- unname(cf["M"])
   beta_S  <- unname(cf["S"])
   
-  c(beta_X=beta_X, beta_M=beta_M, beta_S=beta_S)
+  c(beta_0=beta_0, beta_X=beta_X, beta_M=beta_M, beta_S=beta_S)
 }
 
 eval_CCA_grid <- function(n_vec, reps, dag){
   out <- lapply(n_vec, function(n){
     M <- replicate(reps, fit_lm_once(n, dag))
+    beta_0 <- M["beta_0",]
     beta_X <- M["beta_X",]
     beta_M <- M["beta_M",]
     beta_S <- M["beta_S",]
     data.frame(
       n=n,
+      mean_0 = mean(beta_0), bias_0 = mean(beta_0)-beta0_true, 
       mean_X = mean(beta_X), bias_X = mean(beta_X)-betaX_true, 
       mean_M = mean(beta_M), bias_M = mean(beta_M)-betaM_true, 
       mean_S = mean(beta_S), bias_S = mean(beta_S)-betaS_true
@@ -206,7 +215,7 @@ eval_CCA_grid <- function(n_vec, reps, dag){
 }
 ```
 
-Now, we compare the CCA estimates with the true value $\mathbf{\beta_X = 1}$.
+Now, we compare the CCA estimates with the true values, $\mathbf{\beta_0 = 1}$, $\mathbf{\beta_X = 1}$, $\mathbf{\beta_M = 1}$ and $\mathbf{\beta_S = 1}$.
 
 ```{r}
 # should be unbiased for Fig 1C
@@ -214,7 +223,7 @@ res_1C  <- eval_CCA_grid(n_vec, reps, "fig1C")
 print(res_1C)
 ```
 
-As n increases, we see that the mean of CCA estimates converges towards the true value 1 and their biases converges towards 0. Hence, we can conclude that the complete case analysis estimation of the regression coefficients is asymptotically unbiased for Figure 1C. In such cases where the missingness of the exposure depends on the exposure itself, discarding the incomplete data is more beneficial towards being unbiased. 
+As n increases, we see that the mean of CCA estimates converges towards their true values and their biases converges towards 0. Hence, we can conclude that the complete case analysis estimation of the regression coefficients is asymptotically unbiased for Figure 1C. In such cases where the missingness of the exposure depends on the exposure itself, discarding the incomplete data is more beneficial towards being unbiased. 
 
 Next for Figure 1D, we run CCA estimation:
 ```{r}
@@ -223,7 +232,7 @@ res_1D  <- eval_CCA_grid(n_vec, reps, "fig1D")
 print(res_1D)
 ```
 
-Here, as n increases, the mean of the CCA estimates doesn't converge to the true value and the bias doesn't converge towards 0. Hence, we can say that the CCA estimation of these regression coefficients is biased for Figure 1D where the missingness of the exposure depends on observable and explainable variables, in this case, the outcome and a covariate. Here, we are potentially discarding an entire set of outcome data as they are missing due to their outcome, leading to a bias in the CCA estimates.
+Here, as n increases, the mean of the CCA estimates doesn't converge to their true values and the bias doesn't converge towards 0. Hence, we can say that the CCA estimation of these regression coefficients is biased for Figure 1D where the missingness of the exposure depends on observable and explainable variables, in this case, the outcome and a covariate. Here, we are potentially discarding an entire set of outcome data as they are missing due to their outcome, leading to a bias in the CCA estimates.
 
 The results above also confirm the potential bias of exposure regression coefficient in CCA based on linear regression mentioned in the Table 1.
 
@@ -235,7 +244,7 @@ Hence, the missingness of the exposure in Figure 1C is independent of the outcom
 
 We can say that: 
 
-$\mathbf{ R \perp Y | (X, M)} \Leftrightarrow \mathbf{ R \perp Y | (X, M, S)}$
+$\mathbf{ R \perp Y | (X, M) \Leftrightarrow R \perp Y | (X, M, S) \Leftrightarrow Y \perp R | (X, M, S) }$
 
 where $\mathbf{S}$ is Sex which also is not associated with the missingness in Cannabis Use. 
 
@@ -319,49 +328,199 @@ The error terms are assumed to be independent here as well.
 
 ## Question 8
 
-Let us check if we see a statistical association between $CannabisUse$ and $Outcome$ when adjusted for $MaternalSubstanceUse$ and $Sex$, prove a causal effect from $CannabisUse$ on the $Outcome$ in the case of Figure 1C and 1D. There are several open paths from $CannabisUse$ to $Outcome$ in both the figures. Once we block all these open paths passing through various covariates and still see a statistical association (after adjusting for these covariates), then it means that there is a causal effect from $CannabisUse$ to $Outcome$. Hence, assuming that there is no direct arrow from $CannabisUse$ to $Outcome$, if we can show that they are d-separated conditional on covariates, we can prove the causal effect. 
-
+Let us check if we see a statistical association between $X$ and $Y$ when adjusted for $M, S, R=1$ (as it is a complete case analysis) prove a causal effect from $X$ on the $Y$ in the case of Figure 1C and 1D. There are several open paths from $X$ to $Y$ in both the figures. Once we block all these open paths passing through various covariates, and assume that there is no direct arrow from $X$ to $Y$, we can then say that they are d-separated conditional on the covariates. And, if we still see a statistically significant association (after adjusting for these covariates), then we can prove that is a causal effect from $X$ to $Y$.
 
 First, for Figure 1C:
 
-The open paths from $CannabisUse$ to $Outcome$, assuming that there is no direct arrow from $CannabisUse$ to $Outcome$:
+The open paths from $X$ to $Y$, assuming that there is no direct arrow from $X$ to $Y$:
 
-1. $$CannabisUse  \leftarrow Sex \rightarrow  Outcome$$
+1. $$X  \leftarrow S \rightarrow  Y$$
 
-where $Sex$ is a fork and it needs to be conditioned for to block the path by the first rule. 
+where $S$ is a fork and it needs to be conditioned for to block the path by the first rule. 
 
+2. $$X  \leftarrow M \rightarrow  Y$$
 
-2. $$CannabisUse  \leftarrow Maternal Substance Use \rightarrow  Outcome$$
+where $M$ is a fork as well and blocks the open path when conditioned for. 
 
-where $Maternal Substance Use$ is a fork as well and blocks the open path when conditioned for. 
+3. $$X \rightarrow R \leftarrow M \rightarrow  Y$$
 
-3. $$CannabisUse \rightarrow Miss_{cu} \leftarrow Maternal Substance  Use \rightarrow  Outcome$$
-
-where $Miss_{cu}$ is an inverted fork and need not be conditioned for to block the path by the second rule. Conditioning the fork $Maternal Substance  Use$ is enough to block this path.
+where $R$ is an inverted fork and need not be conditioned for to block the path by the second rule. But, Conditioning the fork $M$ is enough to block this path even when conditioned on $R=1$ for CCA.
 
 Hence, 
-$$CannabisUse \perp_{d} Outcome \mid MaternalSubstanceUse, Sex$$ 
+$$X \perp_{d} Y \mid M, S, R = 1$$ 
 
-meaning there are $CannabisUse$ and $Outcome$ are statistically independent when adjusted for $MaternalSubstanceUse$ and $Sex$. And if we see a statistical association in the complete case analysis, which is asymptotically unbiased for Figure 1C, we can say that CCA is a valid test to prove that there is a direct causal effect from $CannabisUse$ to $Outcome$. 
+meaning there are $X$ and $Y$ are statistically independent when adjusted for $M, S, R=1$. And if we see a statistical association in the complete case analysis, we can say that CCA is a valid test to prove that there is a direct causal effect from $X$ to $Y$. 
 
 
 Now, for Figure 1D:
 
-The open paths from $CannabisUse$ to $Outcome$, assuming that there is no direct arrow from $CannabisUse$ to $Outcome$:
+The open paths from $X$ to $Y$, assuming that there is no direct arrow from $X$ to $Y$:
 
-1. $$CannabisUse  \leftarrow Sex \rightarrow  Outcome$$
+1. $$X  \leftarrow S \rightarrow  Y$$
 
-2. $$CannabisUse  \leftarrow Maternal Substance Use \rightarrow  Outcome$$
+2. $$X  \leftarrow M \rightarrow  Y$$
 
-3. $$CannabisUse  \leftarrow Maternal Substance Use \rightarrow Miss_{cu} \leftarrow Outcome$$
+3. $$X  \leftarrow M \rightarrow R \leftarrow Y$$
 
-and they can all be blocked by conditioning on $MaternalSubstanceUse$ and $Sex$ and not conditioning on $Miss_{cu}$. Hence, again 
-$$CannabisUse \perp_{d} Outcome \mid MaternalSubstanceUse, Sex$$ 
+and they can all be blocked by conditioning on $M, S$, even when conditioning on $R=1$ for CCA. Hence, again 
+$$X \perp_{d} Y \mid M, S, R = 1$$ 
 
-meaning they are statistically independent when adjusted for $MaternalSubstanceUse$ and $Sex$. And if we see a statistical association in the complete case analysis we can say that there is a direct causal effect from $CannabisUse$ to $Outcome$. Even though, CCA is asymptotically biased for Figure 1D, I would say that it can be used to prove the causal effect by statistical association, but maybe not for estimating the causal effect.
-
+meaning they are statistically independent when adjusted for $M, S, R$. And if we see a statistical association in the complete case analysis we can say that there is a direct causal effect from $X$ to $Y$. Even though, CCA is biased for Figure 1D, I would say that it can be used to prove the causal effect by statistical association, but I would think maybe not for estimating the causal effect.
 
 ## Question 9
 
+Now, we will actually look at estimating the causal effect of $X$ on the $Y$, given $M, S, R=1$. We want to see if CCA can provide us an unbiased estimate of this causal effect for Figure 1C and 1D. 
 
-The assignment took 21 hours to complete.
+Let us check the counterfactual diagrams for Figure 1C and 1D, where we fix the exposure to a constant $x$. In these counterfactual diagrams, we will check if $X$ is conditionally d-separated to $Y_x$, which can prove that conditional association is identical to conditional causation. 
+
+### Figure 1C: 
+
+As $R$ and $Y$ both are associated directly with $X$, we introduce both $Y_x$ and $R_x$ to the counterfactual diagram:
+
+The NPSEM for the counterfactual diagram looks like this:
+
+$$ 
+\left.
+\begin{array}{l}
+S := f_{S} (\varepsilon_S) \\
+M := f_{M} (\varepsilon_M) \\
+X := f_{X} (M, S, \varepsilon_X) \\
+Y := f_{Y} (X, M, S, \varepsilon_Y) \\
+R := f_{R} (M, X, \varepsilon_R) \\
+Y_x := f_{Y} (x, M, S, \varepsilon_Y) \\
+R_x := f_{R} (M, x, \varepsilon_R) 
+\end{array}
+\right\}
+$$
+
+
+```{r, echo=FALSE, message=FALSE}
+g <- dagitty("dag {
+  e_M -> M
+  e_R -> R
+  e_S -> S
+  e_X -> X
+  e_Y -> Y
+  e_R -> R_x
+  e_Y -> Y_x
+  S -> X
+  M -> X
+  X -> R
+  M -> R
+  x -> R_x
+  M -> R_x
+  X -> Y
+  S -> Y
+  M -> Y
+  x -> Y_x
+  S -> Y_x
+  M -> Y_x
+}"
+)
+
+plot(g)
+```
+
+Now, let us look at the open paths between $X$ and $Y_x$: 
+
+1. $$X \leftarrow M \rightarrow Y_x$$
+where $M$ is a fork and needs to be conditioned on to block the path.
+2. $$ X \leftarrow S \rightarrow Y_x$$
+where $S$ is a fork and needs to be conditioned on to block the path.
+3. $$ X \rightarrow R \leftarrow M \rightarrow Y_x$$
+where $R$ is an inverted fork and shouldn't be conditioned on to block the path. The path is blocked by conditioning on $M$, even when conditioning on $R$.
+4. $$ X \rightarrow Y \leftarrow e_Y \rightarrow Y_x$$
+where $Y$ is an inverted fork and shouldn't be conditioned on to block the path. Hence, this path is blocked by not conditioning on $Y$.
+5. $$ X \leftarrow M \rightarrow Y \leftarrow e_Y \rightarrow Y_x$$
+also blocked by conditioning on fork $M$ and not conditioning on $Y$.
+6. $$ X \leftarrow S \rightarrow Y \leftarrow e_Y \rightarrow Y_x$$
+also blocked by conditioning on fork $S$ and not conditioning on $Y$.
+7. $$ X \rightarrow R \leftarrow e_R \rightarrow R_x \leftarrow M \rightarrow Y_x$$
+also blocked by conditioning on fork $M$ alone.
+8. $$ X \leftarrow M \rightarrow R_x \leftarrow x \rightarrow Y_x$$
+also blocked by conditioning on fork $M$ alone.
+9. $$ X \rightarrow R \leftarrow M \rightarrow Y \leftarrow e_Y \rightarrow Y_x$$
+also blocked by conditioning on fork $M$ alone and not conditioning on inverted fork $Y$.
+
+and other open paths with more similar loops are all blocked by conditioning on $M, S, R=1$ and not conditioning on $Y$.
+
+Hence, we can say that: 
+
+$$X \perp_d Y_x \mid M, S, R=1$$.
+
+This proves that the associational risk ratio between cannabis use and the outcome when adjusting for maternal substance use and sex is
+identical to the conditional causal risk ratio in complete case analysis for Figure 1C.
+
+$$
+\frac{P(Y = 1 | X = 1, M, S, R =1)}{P(Y = 1 | X = 0, M, S, R =1)} \\
+= \frac{P(Y_1 = 1 | M, S, R =1)}{P(Y_0 = 1 | M, S, R =1)} \\
+$$
+
+### Figure 1D:
+
+As only $Y$ is associated directly with $X$, we introduce $Y_x$ to the diagram, and then by association of $R$ with $Y_x$, we also introduce $R_x$.
+
+The NPSEM for the counterfactual diagram looks like this:
+
+$$ 
+\left.
+\begin{array}{l}
+S := f_{S} (\varepsilon_S) \\
+M := f_{M} (\varepsilon_M) \\
+X := f_{X} (M, S, \varepsilon_X) \\
+Y := f_{Y} (X, M, S, \varepsilon_Y) \\
+R := f_{R} (M, Y, \varepsilon_R) \\
+Y_x := f_{Y} (x, M, S, \varepsilon_Y) \\
+R_x := f_{R} (M, Y_x, \varepsilon_R) 
+\end{array}
+\right\}
+$$
+
+
+```{r, echo=FALSE, message=FALSE}
+g <- dagitty("dag {
+  e_M -> M
+  e_R -> R
+  e_S -> S
+  e_X -> X
+  e_Y -> Y
+  e_R -> R_x
+  e_Y -> Y_x
+  S -> X
+  M -> X
+  Y -> R
+  M -> R
+  Y_x -> R_x
+  M -> R_x
+  X -> Y
+  S -> Y
+  M -> Y
+  x -> Y_x
+  S -> Y_x
+  M -> Y_x
+}"
+)
+
+plot(g)
+```
+
+Now, let us look at the open paths between $X$ and $Y_x$ and if they can be blocked by conditioning on $M, S, R=1$: 
+
+One path stands out in this counterfactual diagram in contrast with the one from Figure 1C: 
+
+$$ X \rightarrow Y \rightarrow R \leftarrow e_R \rightarrow R_x \leftarrow Y_x$$ 
+Here, conditioning on $R$ will open up this path and it cannot be blocked. 
+
+Hence, we can say that not all paths from $X$ to $Y_x$ are blocked when conditioned on $M, S, R=1$.  
+
+Therefore, $$ X \not \perp_d Y_x \mid M, S, R=1$$. 
+
+This proves that the associational risk ratio between cannabis use and the outcome when adjusting for maternal substance use and sex is
+not identical to the conditional causal risk ratio in complete case analysis for Figure 1D.
+
+$$
+\frac{P(Y = 1 | X = 1, M, S, R =1)}{P(Y = 1 | X = 0, M, S, R =1)} \\
+\neq \frac{P(Y_1 = 1 | M, S, R =1)}{P(Y_0 = 1 | M, S, R =1)} \\
+$$
+
+The assignment took 24 hours to complete.
